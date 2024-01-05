@@ -216,7 +216,7 @@ class ValidEpoch(Epoch):
 
     def batch_update(self, x, y):
         with torch.no_grad():
-            # module = self.model
+            module = self.model
             if self.ema:
                 module = self.ema.module
             prediction = module.forward(x)

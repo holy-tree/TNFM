@@ -22,11 +22,15 @@ from data.dataloader import DataLoader, default_collate_fn
 from engine.trainer import TrainEpoch, VaildEpoch
 from engine.ema import ModelEMA
 from data.dataset_register import doctor_trainDataset, doctor_testDataset,\
+                                    tjk_ljy_trainDataset, tjk_ljy_testDataset,\
+                                    tjk_wx_trainDataset, tjk_wx_testDataset,\
+                                    tjk_zcz_trainDataset, tjk_zcz_testDataset,\
                                     tjk_trainDataset, tjk_testDataset,\
                                     xy_2022_trainDataset, xy_2022_testDataset,\
                                     xy_2021_trainDataset, xy_2021_testDataset,\
                                     xy_2020_trainDataset, xy_2020_testDataset,\
                                     qz_trainDataset, qz_testDataset
+
 
 
 import sys
@@ -50,34 +54,21 @@ def set_global_random_seed(seed):
 
 def get_args_parser():
     parser = argparse.ArgumentParser('Detection', add_help=False)
-    parser.add_argument('--batch_size', default=4, type=int, help='Batch size')
+    parser.add_argument('--batch_size', default=1, type=int, help='Batch size')
     
-    # parser.add_argument('--encoder_weights', default='./convmae_base.pth', type=str,
-    #                     help='encoder weights')
-    parser.add_argument('--encoder_weights', default='/media/work/data/zbt/ConvMAE/output_dir1/checkpoint.pth', type=str,
-                        help='encoder weights')
-    # parser.add_argument('--encoder_weights', default='imagenet', type=str,
-    #                     help='encoder weights')
-    
+
     
     parser.add_argument('--datapath', default='/media/work/data/zbt/dataset/xiangya/Tijian/deblur', type=str,
                         help='dataset path')
     parser.add_argument('--output_dir', default='./logs/', type=str,
                         help='output directory')
-    parser.add_argument('--checkpoint', default='', type=str,
-                        help='encoder weights')
-    # parser.add_argument('--checkpoint', default='./logs/202312071524_rtdetr__bs4_512_seed3407/checkpoint_best.pth', type=str,
+
+
+    # parser.add_argument('--checkpoint', default='', type=str,
     #                     help='encoder weights')
+    parser.add_argument('--checkpoint', default='./logs/202312151553___bs1_512_seed3407/checkpoint_best.pth', type=str,
+                        help='encoder weights')
 
-    
-    
-    
-    # unet, unetpp
-    parser.add_argument('--model', default='rtdetr', type=str, help='segmentation model (unet, unetpp)')
-    # parser.add_argument('--encoder', default='resnet101', type=str,
-    #                     help='encoder (convmae or dconvmae)')
-
-    parser.add_argument('--backbone', default='mae', type=str, help='encoder (convmae or dconvmae)')
 
     # parser.add_argument('--is_deblurring', default=True, type=bool, help='is deblurring, should be consistent with encoder_weights')
     parser.add_argument('--input_size', default=512, type=int,
@@ -94,12 +85,12 @@ if __name__ == "__main__":
     args = get_args_parser()
     args = args.parse_args()
 
-    # set_global_random_seed(args.seed)
+    set_global_random_seed(args.seed)
 
 
     DATA_DIR = args.datapath
     # ENCODER = args.encoder
-    ENCODER_WEIGHTS = args.encoder_weights
+    # ENCODER_WEIGHTS = args.encoder_weights
     ACTIVATION = 'sigmoid' # could be None for logits or 'softmax2d' for multicalss segmentation
     DEVICE = 'cuda'
     n_class = 1
@@ -151,8 +142,11 @@ if __name__ == "__main__":
 
 
     vit = ViTBaseline(out_indices=[3, 5, 7, 11],
-                        pretrained = "../SEG/deit_base_patch16_224-b5f2ef4d.pth")
-    vit._freeze_parameters(vit)
+                        # pretrained = "../SEG/deit_base_patch16_224-b5f2ef4d.pth",
+                        pretrained = "../MAE/7/checkpoint-999.pth"
+                        
+                        )
+    # vit._freeze_parameters(vit)
 
     backbone = HYBNet(vit=vit,
                         resnet=convnext,
@@ -222,7 +216,9 @@ if __name__ == "__main__":
                              gamma=2.0,
                              num_classes=1).to(DEVICE)
     postprocessor = RTDETRPostProcessor(num_classes=1, num_top_queries=300, use_focal_loss=True)
-
+    if args.checkpoint:
+        checkpoint = torch.load(args.checkpoint)
+        miss_key = model.load_state_dict(checkpoint, strict=True)
     ema = ModelEMA(model=model, decay=0.9999, warmups=2000)
 
 
@@ -237,23 +233,15 @@ if __name__ == "__main__":
                                   betas=[0.9, 0.999],
                                   weight_decay=0.0001)
 
-    lr_scheduler = torch.optim.lr_scheduler.MultiStepLR(optimizer=optimizer, milestones=[30], gamma=0.1)
+    lr_scheduler = torch.optim.lr_scheduler.MultiStepLR(optimizer=optimizer, milestones=[50], gamma=0.1)
     checkpoint_step = 5
 
 
 
-    
-    if args.checkpoint:
-        checkpoint = torch.load(args.checkpoint)
-        model.load_state_dict(checkpoint)
-    
-
-
 
     t_size = args.input_size
-    if ENCODER_WEIGHTS == None:
-        ENCODER_WEIGHTS = 'None'
-    model_dir = args.output_dir + "/" + datetime.datetime.now().strftime('%Y%m%d%H%M_') + args.model + "_" + \
+
+    model_dir = args.output_dir + "/" + datetime.datetime.now().strftime('%Y%m%d%H%M_')  + "_" + \
          "_bs" + str(batch_size) + "_"  + str(t_size) + "_seed" + str(args.seed) + "/"
     if not os.path.exists(model_dir):
         os.makedirs(model_dir)
@@ -261,17 +249,15 @@ if __name__ == "__main__":
 
 
     # train_dataset = ConcatDataset([tjk_trainDataset, xy_2022_trainDataset, xy_2021_trainDataset])
-    train_dataset = doctor_trainDataset
+    train_dataset = xy_2022_trainDataset
     test_dataset = doctor_testDataset
-    # train_dataset = xy_2022_trainDataset
-    # test_dataset = xy_2022_testDataset 
-
-   
+    # test_dataset = ConcatDataset([xy_2022_testDataset, xy_2021_testDataset])
+    # test_dataset = doctor_testDataset   
     
 
 
-    train_loader = DataLoader(train_dataset, batch_size=2, shuffle=True, num_workers=8, collate_fn=default_collate_fn)
-    valid_loader = DataLoader(test_dataset, batch_size=2, shuffle=False, num_workers=8, collate_fn=default_collate_fn)
+    train_loader = DataLoader(train_dataset, batch_size=4, shuffle=True, num_workers=8, collate_fn=default_collate_fn)
+    valid_loader = DataLoader(test_dataset, batch_size=4, shuffle=True, num_workers=8, collate_fn=default_collate_fn)
 
     
     print ("Train:", len(train_dataset))
@@ -294,7 +280,6 @@ if __name__ == "__main__":
 
     n_parameters = sum(p.numel() for p in model.parameters() if p.requires_grad)
     print('number of params:', n_parameters)
-    
     best_epoch = 0
     best_ap = 0
 
@@ -302,7 +287,7 @@ if __name__ == "__main__":
     for epoch in range(0, 10000):
         print('\nEpoch: {}'.format(epoch))
 
-        loss_mean = train_epoch.run(train_loader)
+        # loss_mean = train_epoch.run(train_loader)
         lr_scheduler.step()
         test_stats, coco_evaluator = valid_epoch.run(valid_loader)
 

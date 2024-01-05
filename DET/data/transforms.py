@@ -60,7 +60,7 @@ train_transforms = T.Compose([
     RandomIoUCrop(p=0.8), 
     T.SanitizeBoundingBox(min_size=1),
     T.RandomHorizontalFlip(),
-    T.Resize(size=[224, 224]),
+    T.Resize(size=[512, 512]),
     T.ToImageTensor(),
     T.ConvertDtype(),
     T.SanitizeBoundingBox(min_size=1),
@@ -69,7 +69,7 @@ train_transforms = T.Compose([
 
 
 val_transforms = T.Compose([
-    T.Resize(size=[224, 224]),
+    T.Resize(size=[512, 512]),
     T.ToImageTensor(),
     T.ConvertDtype(),
 ])

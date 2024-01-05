@@ -73,26 +73,13 @@ class ClassificationHead(nn.Sequential):
 class SegmentationModel(torch.nn.Module):
     def __init__(
         self,
-        encoder_name: str = "resnet34",
-        encoder_depth: int = 5,
-        encoder_weights: Optional[str] = "imagenet",
-        decoder_use_batchnorm: bool = True,
-        decoder_channels: List[int] = (256, 128, 64, 32, 16),
-        decoder_attention_type: Optional[str] = None,
+        mae_encoder: str,
         in_channels: int = 3,
         classes: int = 1,
         activation: Optional[Union[str, callable]] = None,
         aux_params: Optional[dict] = None,
     ):
         super().__init__()
-
-
-        # self.encoder = ResNetEncoder(
-        #     encoder_name,
-        #     in_channels=in_channels,
-        #     depth=encoder_depth,
-        #     weights=encoder_weights,
-        # )
 
         # resnet = PResNet(depth=50,
         #                 variant='d',
@@ -103,10 +90,6 @@ class SegmentationModel(torch.nn.Module):
         #                 pretrained=True)
         # vit = ViTBaseline(out_indices=[3, 5, 7, 11])
 
-        # backbone = hybnet(vit=vit,
-        #                    resnet=resnet,
-        #                    is_sam=False,
-        #                    catn=True)
         
         convnext = ConvNeXt(depths=[3,3,9,3],
                             dims=[96, 192, 384, 768],
@@ -116,7 +99,9 @@ class SegmentationModel(torch.nn.Module):
         convnext.load_state_dict(checkpoint["model"], strict=False)
 
         vit = ViTBaseline(out_indices=[3, 5, 7, 11],
-                          pretrained = "./deit_base_patch16_224-b5f2ef4d.pth")
+                        #   pretrained = "./deit_base_patch16_224-b5f2ef4d.pth"
+                          pretrained = mae_encoder
+                          )
         backbone = HYBNet(vit=vit,
                            resnet=convnext,
                            is_sam=False,
@@ -134,24 +119,9 @@ class SegmentationModel(torch.nn.Module):
         # backbone = resnet
 
         self.encoder = backbone
-        # # self.encoder.out_channels = (64, 256, 512, 1024, 2048)
-        # self.encoder.out_channels = (64, 64, 128, 256, 512)
-        # print(self.encoder.out_channels)
-        # print(decoder_channels)
-        # print(123)
-        # quit()
 
 
 
-        # self.decoder = UnetPlusPlusDecoder(
-        #     encoder_channels=self.encoder.out_channels,
-        #     decoder_channels=decoder_channels,
-        #     n_blocks=encoder_depth,
-        #     use_batchnorm=decoder_use_batchnorm,
-        #     center=True if encoder_name.startswith("vgg") else False,
-        #     attention_type=decoder_attention_type,
-        #     is_mae=is_mae
-        # )
         # in_channels = [64, 128, 256, 512]
         # in_channels = [256, 512, 1024, 2048]
         in_channels = [96,192,384,768]
@@ -161,19 +131,7 @@ class SegmentationModel(torch.nn.Module):
                                      in_channels=in_channels,
                                      num_classes=classes,
                                      )
-        # self.decoder = UPerHead(in_channels=[64, 128, 256, 512],
-        #                         num_classes=classes,
-        #                         channels=512,
-        #                         )
 
-
-        # self.segmentation_head = SegmentationHead(
-        #     in_channels=decoder_channels[-1],
-        #     out_channels=classes,
-        #     activation=activation,
-        #     kernel_size=3,
-        #     upsampling=1,
-        # )
         self.segmentation_head = SegmentationHead(
             in_channels=768,
             out_channels=classes,
@@ -189,7 +147,7 @@ class SegmentationModel(torch.nn.Module):
         else:
             self.classification_head = None
 
-        self.name = "unetplusplus-{}".format(encoder_name)
+        
         self.initialize()
 
 

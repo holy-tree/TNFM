@@ -53,12 +53,12 @@ def train_one_epoch(model: torch.nn.Module,
 
 
 
-        with torch.cuda.amp.autocast():
-            loss, _, _, target = model(samples, mask_ratio=args.mask_ratio)
-
+        # with torch.cuda.amp.autocast():
+        loss, _, _, target = model(samples, mask_ratio=args.mask_ratio)
+        print(loss)
         img = target[0].clone().detach().double().to(torch.device('cpu'))
         img = np.ascontiguousarray(img.numpy().transpose((1,2,0)))*255
-        cv2.imwrite(f"mask.jpg", img)
+        cv2.imwrite(f"ck999.jpg", img)
 
         quit()
 

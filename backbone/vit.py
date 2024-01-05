@@ -46,8 +46,8 @@ from torch.nn.init import normal_
 def load_checkpoint(model, filename, map_location="cpu", strict=False):
     checkpoint = torch.load(filename, map_location=map_location)
     # checkpoint1 = {}
-    # for k, v in checkpoint.items():
-    #     # print(f"keys:{k}")
+    # for k, v in checkpoint['model'].items():
+    #     print(f"keys:{k}")
     #     if k[0] == 'i':
     #         checkpoint1[k[14:]] = checkpoint[k]
     # # for k, v in checkpoint1.items():
@@ -58,7 +58,7 @@ def load_checkpoint(model, filename, map_location="cpu", strict=False):
     # checkpoint1.pop('pos_embed')
 
     miss_key = model.load_state_dict(checkpoint['model'], strict=strict)
-    print(miss_key)
+    print(f"Pretrained Model Missing Key: {miss_key}")
     return checkpoint
 
 

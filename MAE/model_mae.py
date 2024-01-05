@@ -4,7 +4,7 @@ import numpy as np
 import torch.nn.functional as F
 
 from functools import partial
-
+import cv2
 
 import sys
 sys.path.append('..')
@@ -86,7 +86,7 @@ class MAEVit(nn.Module):
         # self.cls_token = nn.Parameter(torch.zeros(1, 1, embed_dim))
 
 
-        self.pos_embed = nn.Parameter(torch.zeros(1, num_patches + 1, embed_dim), requires_grad=False)
+        self.pos_embed = nn.Parameter(torch.zeros(1, num_patches+1, embed_dim), requires_grad=False)
         dpr = [x.item() for x in torch.linspace(0, drop_path_rate, depth)]  # stochastic depth decay rule
         self.blocks = nn.Sequential(*[
             Block(dim=embed_dim, num_heads=num_heads, mlp_ratio=mlp_ratio,
@@ -216,16 +216,16 @@ class MAEVit(nn.Module):
     def forward_encoder(self, x, mask_ratio):
         # embed patches
         x, H, W = self.patch_embed(x)
-        pos_embed = self._get_pos_embed(self.pos_embed[:, 1:], H, W)
 
+        
+        pos_embed = self._get_pos_embed(self.pos_embed[:, 1:], H, W)
+        
 
         # add pos embed w/o cls token
         # x = x + self.pos_embed[:, 1:, :]
         x = x + pos_embed
-        
         # masking: length -> length * mask_ratio
         x, mask, ids_restore = self.random_masking(x, mask_ratio)
-
         # append cls token
         # cls_token = self.cls_token + self.pos_embed[:, :1, :]
         # cls_tokens = cls_token.expand(x.shape[0], -1, -1)
@@ -247,8 +247,6 @@ class MAEVit(nn.Module):
         x = self.decoder_embed(x)
         # append mask tokens to sequence
         mask_tokens = self.mask_token.repeat(x.shape[0], ids_restore.shape[1] - x.shape[1], 1)
-    
-        
         x_ = torch.cat([x, mask_tokens], dim=1)  # no cls token
         x = torch.gather(x_, dim=1, index=ids_restore.unsqueeze(-1).repeat(1, 1, x.shape[2]))  # unshuffle
         # x = torch.cat([x[:, :1, :], x_], dim=1)  # append cls token
@@ -277,6 +275,26 @@ class MAEVit(nn.Module):
         mask: [N, L], 0 is keep, 1 is remove, 
         """
         target = self.patchify(imgs)
+        
+        
+        expanded_mask = mask.unsqueeze(-1)
+        recon = torch.where(expanded_mask == 0., target, pred)
+        recon = self.unpatchify(recon)
+
+        img = recon[0].clone().detach().double().to(torch.device('cpu'))
+        img = np.ascontiguousarray(img.numpy().transpose((1,2,0)))*255
+        cv2.imwrite(f"ck999.jpg", img)
+
+        
+        left = torch.where(expanded_mask == 0, target, torch.zeros_like(target))
+        left = self.unpatchify(left).to(torch.device('cpu'))*255
+
+        left = torch.where(left == 0, torch.tensor(90).to(torch.float32), left)
+        img = left[0].clone().detach().double()
+        img = np.ascontiguousarray(img.numpy().transpose((1,2,0)))
+        cv2.imwrite(f"left.jpg", img)
+        quit()
+
         if self.norm_pix_loss:
             mean = target.mean(dim=-1, keepdim=True)
             var = target.var(dim=-1, keepdim=True)
@@ -286,6 +304,10 @@ class MAEVit(nn.Module):
         loss = loss.mean(dim=-1)  # [N, L], mean loss per patch
 
         loss = (loss * mask).sum() / mask.sum()  # mean loss on removed patches
+
+
+
+
         return loss
 
     
@@ -294,6 +316,22 @@ class MAEVit(nn.Module):
         pred = self.forward_decoder(latent, ids_restore)  # [N, L, p*p*3]
         loss = self.forward_loss(imgs, pred, mask)
 
+
+        
+
+        # target = None
         target = self.unpatchify(pred)
+        
+        # temp = self.patchify(imgs)
+        # temp = self.unpatchify(temp)
+
+        # img = temp[0].clone().detach().double().to(torch.device('cpu'))
+        # img = np.ascontiguousarray(img.numpy().transpose((1,2,0)))*255
+        # cv2.imwrite(f"temp.jpg", img)
+
+        # quit()
+
+
+
         return loss, pred, mask, target
     

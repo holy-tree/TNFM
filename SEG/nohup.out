@@ -1,0 +1,12 @@
+/home/work/anaconda3/envs/upernet/lib/python3.7/site-packages/albumentations/augmentations/transforms.py:1260: FutureWarning: This class has been deprecated. Please use RandomBrightnessContrast
+  FutureWarning,
+/home/work/anaconda3/envs/upernet/lib/python3.7/site-packages/albumentations/imgaug/transforms.py:231: FutureWarning: IAASharpen is deprecated. Please use Sharpen instead
+  warnings.warn("IAASharpen is deprecated. Please use Sharpen instead", FutureWarning)
+/home/work/anaconda3/envs/upernet/lib/python3.7/site-packages/albumentations/augmentations/transforms.py:1286: FutureWarning: RandomContrast has been deprecated. Please use RandomBrightnessContrast
+  FutureWarning,
+usage: Segmentation [--batch_size BATCH_SIZE]
+                    [--encoder_weights ENCODER_WEIGHTS] [--datapath DATAPATH]
+                    [--output_dir OUTPUT_DIR] [--checkpoint CHECKPOINT]
+                    [--mae_encoder MAE_ENCODER] [--input_size INPUT_SIZE]
+                    [--seed SEED]
+Segmentation: error: unrecognized arguments: lr_down.log

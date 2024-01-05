@@ -96,7 +96,7 @@ def evaluate(pred, gt):
 
 def get_args_parser():
     parser = argparse.ArgumentParser('Segmentation prediction', add_help=False)
-    parser.add_argument('--weight_path', default='./logs/202311232119_unetpp_resnet50_deblurTrue_bs2_512_seed2/38_dice_0.76114.pt', type=str,
+    parser.add_argument('--weight_path', default='./logs/202312232159__bs2_512_seed3407/23_dice_0.76129_ema.pth', type=str,
                         help='')
     parser.add_argument('--save_dir', default='./eval', type=str,
                         help='')

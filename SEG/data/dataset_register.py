@@ -4,7 +4,7 @@ import os
 from torch.utils.data import ConcatDataset
 
 
-from .data_loader import Dataset
+from .data_loader import Dataset, VocDataset
 from .augumentations import get_training_augmentation
 
 
@@ -19,7 +19,11 @@ xy_2021_path = os.path.join(path, 'xy_2021')
 xy_2020_path = os.path.join(path, 'xy_2020')
 qz_path = os.path.join(path, 'qz')
 
+
+doctor_path = "/media/work/data/zbt/dataset/xiangya/Tijian/deblur/"
 tn3k_path = "/media/work/data/zbt/dataset/tn3k/tn3k_segmentation"
+
+
 
 breast_nodule_path = "/media/work/data/zbt/dataset/breast_nodule/br"
 BR_BUSI_path = "/media/work/data/zbt/dataset/BR_BUSI/busi/Dataset_BUSI_with_GT/seg"
@@ -57,15 +61,28 @@ xy_2022_trainDataset, xy_2022_testDataset = register_dataset(xy_2022_path)
 xy_2021_trainDataset, xy_2021_testDataset = register_dataset(xy_2021_path)
 xy_2020_trainDataset, xy_2020_testDataset = register_dataset(xy_2020_path)
 qz_trainDataset, qz_testDataset = register_dataset(qz_path)
-tn3k_trainDataset, tn3k_testDataset = register_dataset(tn3k_path)
+# tn3k_trainDataset, tn3k_testDataset = register_dataset(tn3k_path)
+doctor_trainDataset, doctor_testDataset = register_dataset(doctor_path)
+
+
 
 breast_nodule_trainDataset, breast_nodule_testDataset = register_dataset(breast_nodule_path)
 BR_BUSI_trainDataset, BR_BUSI_testDataset = register_dataset(BR_BUSI_path)
 
-BR_BUSI_all_trainDataset, BR_BUSI_all_testDataset = register_dataset(BR_BUSI_all_path)
-BR_BUSI_10_trainDataset, BR_BUSI_10_testDataset = register_dataset(BR_BUSI_10_path)
-BR_BUSI_20_trainDataset, BR_BUSI_20_testDataset = register_dataset(BR_BUSI_20_path)
+BN_all_trainDataset, BN_all_testDataset = register_dataset(BR_BUSI_all_path)
+BN_10_trainDataset, BN_10_testDataset = register_dataset(BR_BUSI_10_path)
+BN_20_trainDataset, BN_20_testDataset = register_dataset(BR_BUSI_20_path)
 
 BR_busi_all_trainDataset, BR_busi_all_testDataset = register_dataset(BR_busi_all_path)
 BR_busi_10_trainDataset, BR_busi_10_testDataset = register_dataset(BR_busi_10_path)
 BR_busi_20_trainDataset, BR_busi_20_testDataset = register_dataset(BR_busi_20_path)
+
+
+
+
+tn3k_trainDataset = VocDataset(images_dir='/media/work/data/zbt/dataset/tn3k/tn3k/JPEGImages',
+                                masks_dir='/media/work/data/zbt/dataset/tn3k/tn3k/SegmentationClass',
+                                txt_path='/media/work/data/zbt/dataset/tn3k/tn3k/ImageSets/train.txt')
+tn3k_testDataset = VocDataset(images_dir='/media/work/data/zbt/dataset/tn3k/tn3k/JPEGImages',
+                                masks_dir='/media/work/data/zbt/dataset/tn3k/tn3k/SegmentationClass',
+                                txt_path='/media/work/data/zbt/dataset/tn3k/tn3k/ImageSets/new_test.txt')

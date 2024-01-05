@@ -9,6 +9,68 @@ from torchvision import transforms as T
 
 
 
+class VocDataset(BaseDataset):
+    def __init__(self,
+                 images_dir,
+                 masks_dir,
+                 txt_path,
+                 augmentation=None,
+                 t_size=512):
+        with open(txt_path, 'r') as f:
+            txt_lines = f.readlines()
+        self.ids = [txt_line.strip() for txt_line in txt_lines]
+        self.images_fps = [os.path.join(images_dir, image_id+'.jpg') for image_id in self.ids]
+        self.masks_fps = [os.path.join(masks_dir, image_id+'.png') for image_id in self.ids]
+        self.size = t_size
+        self.augmentation = augmentation
+
+
+    def __getitem__(self, i):
+        # read data
+
+        image = cv2.imread(self.images_fps[i], cv2.IMREAD_COLOR)
+
+       # image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+        mask = cv2.imread(self.masks_fps[i], cv2.IMREAD_GRAYSCALE)
+        if image is None:
+            print ("image is none,", self.images_fps[i])
+
+        if mask is None:
+            print ("mask is none,", self.masks_fps[i])
+
+
+        image = cv2.resize(image, (self.size, self.size), interpolation=cv2.INTER_NEAREST)
+        mask = cv2.resize(mask, (self.size, self.size), interpolation=cv2.INTER_NEAREST )
+
+
+        # apply augmentations
+        if self.augmentation:
+            sample = self.augmentation(image=image, mask=mask)
+            image, mask = sample['image'], sample['mask']
+
+        ""
+        image = image / 255.0
+        mask = mask / 255.0
+
+        mask[mask == 0] = 0
+        mask[mask > 0] = 1
+        
+
+
+        image = image.transpose(2, 0, 1)
+
+        image = image.astype('float32')
+
+        mask = np.expand_dims(mask, 0).astype('float32')
+
+        return image, mask, self.images_fps[i] [self.images_fps[i].rfind('/') + 1:]
+
+    def __len__(self):
+        return len(self.ids)
+
+
+
+
 class Dataset(BaseDataset):
     """CamVid Dataset. Read images, apply augmentation and preprocessing transformations.
 
@@ -33,6 +95,7 @@ class Dataset(BaseDataset):
             need_norm=False,
             augmentation=None,
             preprocessing=None,
+            useTxt=False
     ):
         self.ids = [f for f in os.listdir(images_dir)]
         self.images_fps = [os.path.join(images_dir, image_id) for image_id in self.ids]

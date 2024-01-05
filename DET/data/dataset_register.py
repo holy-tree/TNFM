@@ -18,7 +18,7 @@ xy_2021_path = os.path.join(path, 'xy_2021')
 xy_2020_path = os.path.join(path, 'xy_2020')
 qz_path = os.path.join(path, 'qz')
 
-
+# from torchvision.datasets import CocoDetection
 def register_dataset(dataset_path):
     x_train = os.path.join(dataset_path, 'JPEGImages/train')
     x_test = os.path.join(dataset_path, 'JPEGImages/test')
@@ -28,11 +28,11 @@ def register_dataset(dataset_path):
     train_dataset = CocoDetection(img_folder=x_train,
                                   ann_file=y_train,
                                   transforms=train_transforms,
-                                  return_masks=False)
+                                  return_masks=False,)
     valid_dataset = CocoDetection(img_folder=x_test,
                                   ann_file=y_test,
                                   transforms=val_transforms,
-                                  return_masks=False)
+                                  return_masks=False,)
     
     return train_dataset, valid_dataset
 
@@ -49,3 +49,5 @@ xy_2022_trainDataset, xy_2022_testDataset = register_dataset(xy_2022_path)
 xy_2021_trainDataset, xy_2021_testDataset = register_dataset(xy_2021_path)
 xy_2020_trainDataset, xy_2020_testDataset = register_dataset(xy_2020_path)
 qz_trainDataset, qz_testDataset = register_dataset(qz_path)
+
+

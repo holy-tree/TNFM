@@ -16,6 +16,7 @@ import os
 import time
 from pathlib import Path
 
+
 import torch
 import torch.backends.cudnn as cudnn
 from torch.utils.tensorboard import SummaryWriter
@@ -37,7 +38,7 @@ from engine_pretrain import train_one_epoch
 
 def get_args_parser():
     parser = argparse.ArgumentParser('MAE pre-training', add_help=False)
-    parser.add_argument('--batch_size', default=64, type=int,
+    parser.add_argument('--batch_size', default=4, type=int,
                         help='Batch size per GPU (effective batch size is batch_size * accum_iter * # gpus')
     parser.add_argument('--epochs', default=400, type=int)
     parser.add_argument('--accum_iter', default=1, type=int,
@@ -50,9 +51,7 @@ def get_args_parser():
     parser.add_argument('--input_size', default=224, type=int,
                         help='images input size')
 
-    parser.add_argument('--mask_ratio', default=0.75, type=float,
-                        help='Masking ratio (percentage of removed patches).')
-
+    
     parser.add_argument('--norm_pix_loss', action='store_true',
                         help='Use (per-patch) normalized pixels as targets for computing loss')
     parser.set_defaults(norm_pix_loss=False)
@@ -63,7 +62,7 @@ def get_args_parser():
 
     parser.add_argument('--lr', type=float, default=None, metavar='LR',
                         help='learning rate (absolute lr)')
-    parser.add_argument('--blr', type=float, default=1e-3, metavar='LR',
+    parser.add_argument('--blr', type=float, default=1.5e-4, metavar='LR',
                         help='base learning rate: absolute_lr = base_lr * total_batch_size / 256')
     parser.add_argument('--min_lr', type=float, default=0., metavar='LR',
                         help='lower lr bound for cyclic schedulers that hit 0')
@@ -72,16 +71,20 @@ def get_args_parser():
                         help='epochs to warmup LR')
 
     # Dataset parameters
-    parser.add_argument('--data_path', default='/media/work/data/zbt/dataset/xiangya/doctor_voc/deblur/origin_imgs/', type=str,
+    # parser.add_argument('--data_path', default='/media/work/data/zbt/dataset/xiangya/doctor_voc/deblur/origin_imgs/', type=str,
+    #                     help='dataset path')
+    parser.add_argument('--data_path', default='/media/work/data2/zbt/dataset/mae/thyroid', type=str,
                         help='dataset path')
+    
+    
 
-    parser.add_argument('--output_dir', default='./output_dir/1',
+    parser.add_argument('--output_dir', default='./output_dir/3',
                         help='path where to save, empty for no saving')
-    parser.add_argument('--log_dir', default='./output_dir/1',
+    parser.add_argument('--log_dir', default='./output_dir/3',
                         help='path where to tensorboard log')
     parser.add_argument('--device', default='cuda',
                         help='device to use for training / testing')
-    parser.add_argument('--seed', default=0, type=int)
+    parser.add_argument('--seed', default=2, type=int)
     parser.add_argument('--resume', default='',
                         help='resume from checkpoint')
 
@@ -100,11 +103,18 @@ def get_args_parser():
     parser.add_argument('--dist_on_itp', action='store_true', default=False)
     parser.add_argument('--dist_url', default='env://',
                         help='url used to set up distributed training')
+    
+    parser.add_argument('--mask_ratio', default=0.75, type=float,
+                        help='Masking ratio (percentage of removed patches).')
 
 
+    # parser.add_argument('--checkpoint', default='', type=str)
+    parser.add_argument('--checkpoint', default='./7/checkpoint-999.pth', type=str)
+    # parser.add_argument('--checkpoint', default='./little/checkpoint-200.pth', type=str)
+    # parser.add_argument('--checkpoint', default='./output_dir/2/checkpoint-300.pth', type=str)
 
-    parser.add_argument('--checkpoint', default='./output_dir/checkpoint-80.pth', type=str)
-
+    
+    
 
     return parser
 
@@ -131,7 +141,7 @@ def main(args):
             transforms.ToTensor(),
             # transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
             ])
-    dataset_train = datasets.ImageFolder(os.path.join(args.data_path, '0'), transform=transform_train)
+    dataset_train = datasets.ImageFolder(args.data_path, transform=transform_train)
     print(dataset_train)
 
     if True:  # args.distributed:
@@ -209,7 +219,7 @@ def main(args):
             log_writer=log_writer,
             args=args
         )
-        if args.output_dir and (epoch % 20 == 0 or epoch + 1 == args.epochs):
+        if args.output_dir and (epoch % 1 == 0 or epoch + 1 == args.epochs):
             misc.save_model(
                 args=args, model=model, model_without_ddp=model_without_ddp, optimizer=optimizer,
                 loss_scaler=loss_scaler, epoch=epoch)
